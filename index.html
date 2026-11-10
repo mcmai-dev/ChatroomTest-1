@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Public Chatroom</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: linear-gradient(180deg, #ffffff 0%, #111111 100%);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .app-card {
+      width: 100%;
+      max-width: 500px;
+      height: 100dvh;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    @media (min-width: 601px) {
+      .app-card {
+        height: 90vh;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+    }
+
+    /* Black-to-Dark Gray Gradient Header */
+    .card-header {
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #000000 0%, #262626 100%);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: linear-gradient(135deg, #222222, #383838);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      position: relative;
+      transition: transform 0.1s ease, background 0.2s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+    }
+
+    .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s;
+      background-color: #000000;
+      color: #ffffff;
+      text-align: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      position: absolute;
+      z-index: 10;
+      top: 130%;
+      right: 0;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #444;
+    }
+
+    .icon-btn:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Profile Screen */
+    .profile-container {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #111111;
+    }
+
+    input, select {
+      padding: 12px;
+      border: 1px solid #cccccc;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      width: 100%;
+      background: #ffffff;
+      color: #111111;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: #000000;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .error-msg {
+      color: #dc2626;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      padding: 12px;
+      background: linear-gradient(135deg, #000000 0%, #333333 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    /* Gradient Chat Screen Interface */
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+      background: linear-gradient(180deg, #ffffff 0%, #e6e6e6 100%);
+    }
+
+    .message {
+      background: linear-gradient(135deg, #ffffff 0%, #f4f4f4 100%);
+      border: 1px solid #dcdcdc;
+      padding: 10px 14px;
+      border-radius: 10px;
+      max-width: 85%;
+      width: fit-content;
+      word-break: break-word;
+      font-size: 0.92rem;
+      line-height: 1.4;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .message .user-tag {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: #222222;
+      margin-bottom: 4px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .message .class-badge {
+      background: linear-gradient(135deg, #000000 0%, #444444 100%);
+      color: #ffffff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 500;
+    }
+
+    .chat-input-container {
+      padding: 12px 16px;
+      border-top: 1px solid #dcdcdc;
+      background: linear-gradient(180deg, #f9f9f9 0%, #ffffff 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .chat-input-area {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #cccccc;
+    }
+
+    .counter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #666666;
+      padding: 0 2px;
+    }
+
+    .char-counter.limit {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .spam-warning {
+      color: #dc2626;
+      font-weight: 600;
+      display: none;
+    }
+
+    /* Leaderboard Screen */
+    .leaderboard-container {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+    }
+
+    .leaderboard-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      color: #000000;
+      border-bottom: 2px solid #000000;
+      padding-bottom: 10px;
+    }
+
+    .lb-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #f4f4f4 100%);
+      border: 1px solid #dcdcdc;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .lb-rank {
+      font-weight: 700;
+      font-size: 1rem;
+      width: 35px;
+      color: #111111;
+    }
+
+    .lb-user-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .lb-username {
+      font-weight: 600;
+      color: #000000;
+    }
+
+    .lb-class {
+      font-size: 0.75rem;
+      color: #666666;
+    }
+
+    .lb-score {
+      font-weight: 600;
+      background: linear-gradient(135deg, #000000 0%, #333333 100%);
+      color: #ffffff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="app-card">
+    <div class="card-header">
+      <span id="headerTitle">Profile Setup</span>
+      
+      <div class="header-actions">
+        <!-- Leaderboard Toggle Button -->
+        <button id="leaderboardBtn" class="icon-btn hidden">
+          🏆
+          <div class="tooltip">Leaderboard</div>
+        </button>
+
+        <!-- Registered Profiles Counter -->
+        <div id="activeCounter" class="icon-btn hidden" style="cursor: default;">
+          👁️ <span id="userCount">0</span>
+          <div class="tooltip">Registered Profiles</div>
+        </div>
+
+        <!-- Exit / Sign Out Button -->
+        <button id="signOutBtn" class="icon-btn hidden" style="background: linear-gradient(135deg, #222222, #000000);">
+          Exit
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. PROFILE CREATION SCREEN -->
+    <div id="profileScreen" class="screen profile-container">
+      <div class="form-group">
+        <label for="usernameInput">Username (4-12 characters, no spaces)</label>
+        <input type="text" id="usernameInput" placeholder="e.g. Alex99" maxlength="12" />
+        <div id="usernameError" class="error-msg"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="formSelect">Select Form</label>
+        <select id="formSelect">
+          <option value="">-- Choose Form --</option>
+          <option value="1st Form">1st Form</option>
+          <option value="2nd Form">2nd Form</option>
+          <option value="3rd Form">3rd Form</option>
+          <option value="4th Form">4th Form</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="classSelect">Select Class</label>
+        <select id="classSelect" disabled>
+          <option value="">-- Select Form First --</option>
+        </select>
+        <div id="classError" class="error-msg"></div>
+      </div>
+
+      <button id="joinBtn" class="btn-primary">Join Chatroom</button>
+    </div>
+
+    <!-- 2. CHATROOM SCREEN -->
+    <div id="chatScreen" class="screen hidden">
+      <div class="chat-messages" id="messagesContainer"></div>
+      <div class="chat-input-container">
+        <div class="chat-input-area">
+          <input type="text" id="messageInput" placeholder="Type a message..." maxlength="100" />
+          <button id="sendBtn" class="btn-primary" style="margin-top: 0; padding: 10px 18px;">Send</button>
+        </div>
+        <div class="counter-row">
+          <span id="spamWarning" class="spam-warning">Slow down! Please wait a moment.</span>
+          <span id="charCounter" class="char-counter">0/100</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. LEADERBOARD SCREEN -->
+    <div id="leaderboardScreen" class="screen leaderboard-container hidden">
+      <div class="leaderboard-title">Top Chatters Leaderboard</div>
+      <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <button id="backToChatBtn" class="btn-primary" style="margin-top: auto;">Back to Chat</button>
+    </div>
+  </div>
+
+  <script>
+    const classData = {
+      "1st Form": ["1 Empathy", "1 Courage", "1 Excellence", "1 Respect", "1 Justice", "1 Honesty", "1 Responsibility", "1 Patriotism"],
+      "2nd Form": ["2 Empathy", "2 Courage", "2 Excellence", "2 Respect", "2 Justice", "2 Honesty", "2 Responsibility", "2 Patriotism"],
+      "3rd Form": ["3 Arts", "3 I.C.T.", "3 Business 1", "3 Business 2", "3 Tourism 1", "3 Tourism 2", "3 Industrial", "3 General", "3 Science"],
+      "4th Form": ["4 Arts", "4 I.C.T.", "4 Business 1", "4 Business 2", "4 Tourism 1", "4 Tourism 2", "4 Industrial", "4 General", "4 Science"]
+    };
+
+    const SUPABASE_URL = 'https://jrjcgrstosclwvtovfqm.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_RdENPnzJGKBhDRBiq6XWJw_hFZBDN7H';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = { username: '', className: '' };
+    let lastMessageTime = 0;
+
+    const profileScreen = document.getElementById('profileScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const leaderboardScreen = document.getElementById('leaderboardScreen');
+    const headerTitle = document.getElementById('headerTitle');
+    const activeCounter = document.getElementById('activeCounter');
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userCount = document.getElementById('userCount');
+    const usernameInput = document.getElementById('usernameInput');
+    const formSelect = document.getElementById('formSelect');
+    const classSelect = document.getElementById('classSelect');
+    const usernameError = document.getElementById('usernameError');
+    const classError = document.getElementById('classError');
+    const joinBtn = document.getElementById('joinBtn');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const charCounter = document.getElementById('charCounter');
+    const spamWarning = document.getElementById('spamWarning');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const backToChatBtn = document.getElementById('backToChatBtn');
+
+    // Fetch total profiles count from database
+    async function fetchTotalProfilesCount() {
+      const { count, error } = await supabaseClient
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (!error && count !== null) {
+        userCount.textContent = count;
+      }
+    }
+
+    formSelect.addEventListener('change', () => {
+      const selectedForm = formSelect.value;
+      classSelect.innerHTML = '';
+
+      if (!selectedForm || !classData[selectedForm]) {
+        classSelect.disabled = true;
+        classSelect.innerHTML = '<option value="">-- Select Form First --</option>';
+        return;
+      }
+
+      classSelect.disabled = false;
+      classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+      classData[selectedForm].forEach(cName => {
+        const opt = document.createElement('option');
+        opt.value = cName;
+        opt.textContent = cName;
+        classSelect.appendChild(opt);
+      });
+    });
+
+    messageInput.addEventListener('input', () => {
+      const length = messageInput.value.length;
+      charCounter.textContent = `${length}/100`;
+      if (length >= 100) {
+        charCounter.classList.add('limit');
+      } else {
+        charCounter.classList.remove('limit');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchTotalProfilesCount();
+      const savedProfile = localStorage.getItem('chat_profile');
+      if (savedProfile) {
+        try {
+          currentUser = JSON.parse(savedProfile);
+          enterChatroom();
+        } catch(e) {
+          localStorage.removeItem('chat_profile');
+        }
+      }
+    });
+
+    joinBtn.addEventListener('click', async () => {
+      usernameError.textContent = '';
+      classError.textContent = '';
+
+      const username = usernameInput.value.trim();
+      const selectedClass = classSelect.value;
+
+      let isValid = true;
+
+      if (/\s/.test(username)) {
+        usernameError.textContent = 'Username cannot contain spaces.';
+        isValid = false;
+      } else if (username.length < 4 || username.length > 12) {
+        usernameError.textContent = 'Username must be between 4 and 12 characters.';
+        isValid = false;
+      }
+
+      if (!selectedClass) {
+        classError.textContent = 'Please select a class.';
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      const { data: existingUser } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .ilike('username', username)
+        .maybeSingle();
+
+      if (existingUser) {
+        usernameError.textContent = '⚠️ Username already exists!';
+        return;
+      }
+
+      const { error: insertError } = await supabaseClient
+        .from('profiles')
+        .insert([{ username: username, class_name: selectedClass, message_count: 0 }]);
+
+      if (insertError) {
+        usernameError.textContent = 'Error saving profile. Try another name.';
+        return;
+      }
+
+      currentUser = { username: username, className: selectedClass };
+      localStorage.setItem('chat_profile', JSON.stringify(currentUser));
+      enterChatroom();
+    });
+
+    async function enterChatroom() {
+      profileScreen.classList.add('hidden');
+      leaderboardScreen.classList.add('hidden');
+      chatScreen.classList.remove('hidden');
+      activeCounter.classList.remove('hidden');
+      leaderboardBtn.classList.remove('hidden');
+      signOutBtn.classList.remove('hidden');
+      headerTitle.textContent = "Public Chatroom";
+
+      fetchTotalProfilesCount();
+      fetchMessages();
+      subscribeToMessages();
+    }
+
+    signOutBtn.addEventListener('click', () => {
+      localStorage.removeItem('chat_profile');
+      location.reload();
+    });
+
+    leaderboardBtn.addEventListener('click', async () => {
+      chatScreen.classList.add('hidden');
+      leaderboardScreen.classList.remove('hidden');
+      headerTitle.textContent = "Leaderboard";
+
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('username, class_name, message_count')
+        .order('message_count', { ascending: false })
+        .limit(10);
+
+      leaderboardList.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        leaderboardList.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">No leaderboard data yet.</div>';
+        return;
+      }
+
+      data.forEach((p, index) => {
+        const item = document.createElement('div');
+        item.className = 'lb-item';
+        item.innerHTML = `
+          <div class="lb-rank">#${index + 1}</div>
+          <div class="lb-user-info">
+            <span class="lb-username">${escapeHtml(p.username)}</span>
+            <span class="lb-class">${escapeHtml(p.class_name)}</span>
+          </div>
+          <div class="lb-score">${p.message_count} msgs</div>
+        `;
+        leaderboardList.appendChild(item);
+      });
+    });
+
+    backToChatBtn.addEventListener('click', () => {
+      leaderboardScreen.classList.add('hidden');
+      chatScreen.classList.remove('hidden');
+      headerTitle.textContent = "Public Chatroom";
+    });
+
+    function renderMessage(msg) {
+      const msgElement = document.createElement('div');
+      msgElement.className = 'message';
+      msgElement.innerHTML = `
+        <div class="user-tag">
+          <span>${escapeHtml(msg.username)}</span>
+          ${msg.class_name ? `<span class="class-badge">${escapeHtml(msg.class_name)}</span>` : ''}
+        </div>
+        <div class="text">${escapeHtml(msg.content)}</div>
+      `;
+      messagesContainer.appendChild(msgElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text;
+      return div.innerHTML;
+    }
+
+    async function fetchMessages() {
+      const { data, error } = await supabaseClient
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      data.forEach(renderMessage);
+    }
+
+    async function sendMessage() {
+      const content = messageInput.value.trim();
+      if (!content) return;
+
+      const now = Date.now();
+      if (now - lastMessageTime < 1500) {
+        spamWarning.style.display = 'block';
+        setTimeout(() => { spamWarning.style.display = 'none'; }, 2000);
+        return;
+      }
+      lastMessageTime = now;
+
+      const trimmedContent = content.substring(0, 100);
+      messageInput.value = '';
+      charCounter.textContent = '0/100';
+      charCounter.classList.remove('limit');
+      spamWarning.style.display = 'none';
+
+      const { error } = await supabaseClient
+        .from('messages')
+        .insert([{
+          username: currentUser.username,
+          class_name: currentUser.className,
+          content: trimmedContent
+        }]);
+
+      if (error) {
+        console.error('Error sending message:', error);
+      }
+    }
+
+    function subscribeToMessages() {
+      supabaseClient
+        .channel('public:messages')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            renderMessage(payload.new);
+          }
+        )
+        .subscribe();
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
+
